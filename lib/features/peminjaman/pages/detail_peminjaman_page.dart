@@ -24,57 +24,59 @@ class DetailPeminjamanPage extends StatelessWidget {
     final pdf = pw.Document();
 
     pdf.addPage(
-      pw.Page(
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(
-                'DATA PEMINJAMAN',
-                style: pw.TextStyle(
-                  fontSize: 22,
-                  fontWeight: pw.FontWeight.bold,
-                ),
+    pw.Page(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(24),
+      build: (pw.Context context) {
+        return pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(
+              'DATA PEMINJAMAN',
+              style: pw.TextStyle(
+                fontSize: 22,
+                fontWeight: pw.FontWeight.bold,
               ),
-              pw.SizedBox(height: 20),
+            ),
+            pw.SizedBox(height: 20),
 
-              pw.Text('Nama Peminjam : ${data['nama_peminjam']}'),
-              pw.Text('Kelas         : ${data['kelas']}'),
-              pw.Text('Instansi      : ${data['instansi'] ?? '-'}'),
+            pw.Text('Nama Peminjam : ${data['nama_peminjam']}'),
+            pw.Text('Kelas         : ${data['kelas']}'),
+            pw.Text('Instansi      : ${data['instansi'] ?? '-'}'),
 
-              pw.SizedBox(height: 10),
+            pw.SizedBox(height: 10),
 
-              pw.Text('Nama Barang   : ${data['nama_barang']}'),
+            pw.Text('Nama Barang   : ${data['nama_barang']}'),
 
-              pw.SizedBox(height: 10),
+            pw.SizedBox(height: 10),
 
-              pw.Text(
-                  'Tanggal Pinjam  : ${data['tanggal_pinjam'].substring(0, 10)}'),
-              pw.Text(
-                  'Tanggal Kembali: ${data['tanggal_kembali'].substring(0, 10)}'),
+            pw.Text(
+                'Tanggal Pinjam  : ${data['tanggal_pinjam'].substring(0, 10)}'),
+            pw.Text(
+                'Tanggal Kembali: ${data['tanggal_kembali'].substring(0, 10)}'),
 
-              pw.SizedBox(height: 20),
+            pw.SizedBox(height: 20),
 
-              // === FOTO BARANG JIKA ADA ===
-              if (data['foto_barang'] != null)
-                pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text('Foto Barang :'),
-                    pw.SizedBox(height: 10),
-                    pw.Image(
-                      pw.MemoryImage(
-                        File(data['foto_barang']).readAsBytesSync(),
-                      ),
-                      width: 200,
+            if (data['foto_barang'] != null)
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('Foto Barang :'),
+                  pw.SizedBox(height: 10),
+                  pw.Image(
+                    pw.MemoryImage(
+                      File(data['foto_barang']).readAsBytesSync(),
                     ),
-                  ],
-                ),
-            ],
-          );
-        },
-      ),
-    );
+                    width: 200,
+                  ),
+                ],
+              ),
+          ],
+        );
+      },
+    ),
+  );
+
 
     // ===== SIMPAN FILE =====
     final dir = await getApplicationDocumentsDirectory();
