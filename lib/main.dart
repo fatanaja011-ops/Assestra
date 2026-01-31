@@ -21,13 +21,13 @@ class AssestraApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2E7D32), // hijau elegan
+          seedColor: const Color(0xFF4DB6AC),
         ),
-        scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+        scaffoldBackgroundColor: const Color(0xFFF1F8F4),
         appBarTheme: const AppBarTheme(
           centerTitle: true,
-          backgroundColor: Color(0xFF2E7D32),
-          foregroundColor: Colors.white,
+          backgroundColor: Color(0xFFF1F8F4),
+          foregroundColor: Colors.black,
           elevation: 0,
         ),
         inputDecorationTheme: InputDecorationTheme(
