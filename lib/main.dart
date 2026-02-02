@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-// pages
 import 'features/home/pages/home_page.dart';
 
 void main() {
