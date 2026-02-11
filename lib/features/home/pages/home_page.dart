@@ -1,24 +1,74 @@
 import 'package:flutter/material.dart';
 import '../../peminjaman/pages/daftar_peminjaman_page.dart';
-import '../../peminjaman/pages/tambah_peminjaman_page.dart';
+import 'cara_pakai_modal.dart';
+import '../../../laporan/pages/laporan_bulanan_page.dart';
+import '../../../core/database/db_helper.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool isExportMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    cekArsipOtomatis();
+  }
+
+  Future<void> cekArsipOtomatis() async {
+    await DBHelper.autoArsipBulanLalu();
+    setState(() {});
+  }
+
+  void setExportMode(bool value) {
+    setState(() {
+      isExportMode = value;
+    });
+  }
+
+  void _showCaraPakaiModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return const CaraPakaiModal();
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ===== BACKGROUND WARNA MODERN =====
       backgroundColor: const Color(0xFFF1F8F4),
 
-      // ===== DRAWER =====
+      // ===== APPBAR DINAMIS =====
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF1F8F4),
+        elevation: 0,
+        automaticallyImplyLeading: !isExportMode,
+        iconTheme: const IconThemeData(color: Colors.black),
+        title: Text(
+          isExportMode ? "Export ke PDF" : "Assestra",
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             const UserAccountsDrawerHeader(
               decoration: BoxDecoration(
-                color: Color (0xFF4DB6AC),
+                color: Color(0xFF4DB6AC),
               ),
               accountName: Text(
                 'Assestra',
@@ -40,7 +90,6 @@ class HomePage extends StatelessWidget {
               title: const Text('Tentang Aplikasi'),
               onTap: () {
                 Navigator.pop(context);
-
                 showDialog(
                   context: context,
                   builder: (_) => AlertDialog(
@@ -67,24 +116,19 @@ class HomePage extends StatelessWidget {
               title: const Text('Cara Pakai'),
               onTap: () {
                 Navigator.pop(context);
+                _showCaraPakaiModal(context);
+              },
+            ),
 
-                showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text('Cara Menggunakan Assestra'),
-                    content: const Text(
-                      '1. Tekan tombol + untuk menambah peminjaman\n'
-                      '2. Isi data barang dan peminjam\n'
-                      '3. Pilih tanggal pinjam & kembali\n'
-                      '4. Simpan data peminjaman\n\n'
-                      'Data akan otomatis tersimpan dan tampil di daftar.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Mengerti'),
-                      ),
-                    ],
+            ListTile(
+              leading: const Icon(Icons.bar_chart, color: Color(0xFF4DB6AC)),
+              title: const Text('Laporan'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LaporanBulananPage(),
                   ),
                 );
               },
@@ -102,59 +146,11 @@ class HomePage extends StatelessWidget {
       ),
 
 
-
-      // ===== BODY =====
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ===== HEADER CUSTOM =====
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Builder(
-                    builder: (context) => IconButton(
-                      icon: const Icon(Icons.menu),
-                      onPressed: () {
-                        Scaffold.of(context).openDrawer();
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Assestra',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ===== LIST PEMINJAMAN =====
-            const Expanded(
-              child: DaftarPeminjamanPage(),
-            ),
-          ],
+        child: DaftarPeminjamanPage(
+          isExportMode: isExportMode,
+          onExportModeChanged: setExportMode,
         ),
-      ),
-
-      // ===== FLOATING BUTTON TAMBAH =====
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fabhome',
-        backgroundColor: const Color(0xFF4DB6AC),
-        child: const Icon(Icons.add, size: 30, color: Colors.white),
-        
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const TambahPeminjamanPage(),
-            ),
-          );
-        },
       ),
     );
   }

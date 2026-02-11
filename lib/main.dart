@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'features/home/pages/home_page.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-void main() {
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await initializeDateFormatting('id_ID', null);
+
   runApp(const AssestraApp());
 }
 
