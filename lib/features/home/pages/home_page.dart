@@ -3,6 +3,7 @@ import '../../peminjaman/pages/daftar_peminjaman_page.dart';
 import 'cara_pakai_modal.dart';
 import '../../../laporan/pages/laporan_bulanan_page.dart';
 import '../../../core/database/db_helper.dart';
+import '../../peminjaman/pages/tambah_peminjaman_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,6 +14,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool isExportMode = false;
+  Function() reloadDaftarPeminjaman = () {};
 
   @override
   void initState() {
@@ -35,9 +37,21 @@ class _HomePageState extends State<HomePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(24),
+        ),
+      ),
       builder: (context) {
-        return const CaraPakaiModal();
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.85,
+          minChildSize: 0.6,
+          maxChildSize: 0.95,
+          builder: (_, controller) {
+            return TambahPeminjamanPage();
+          },
+        );
       },
     );
   }
@@ -145,13 +159,45 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
 
+      
 
       body: SafeArea(
         child: DaftarPeminjamanPage(
           isExportMode: isExportMode,
           onExportModeChanged: setExportMode,
+          onPageReady: (reloadCallback) {
+            reloadDaftarPeminjaman = reloadCallback;
+          },
         ),
       ),
+
+      floatingActionButton: !isExportMode
+        ? FloatingActionButton(
+            backgroundColor: const Color(0xFF4DB6AC),
+            child: const Icon(Icons.add, color: Colors.white),
+            onPressed: () async {
+                await showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) {
+                  return FractionallySizedBox(
+                    heightFactor: 0.85,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF1F8F4),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(24),
+                        ),
+                      ),
+                      child: const TambahPeminjamanPage(),
+                    ),
+                  );
+                },
+              );
+            }
+          )
+        : null,
     );
   }
 }

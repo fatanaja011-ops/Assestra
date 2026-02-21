@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../pdf/pdf_helper.dart';
 
 class DBHelper {
   static Database? _database;
@@ -41,7 +42,10 @@ class DBHelper {
         tanggal_pinjam TEXT NOT NULL,
         tanggal_kembali TEXT NOT NULL,
         foto_path TEXT,
-        created_at TEXT
+        created_at TEXT,
+        is_laporan INTEGER DEFAULT 0,
+        jenis_laporan TEXT,
+        tanggal_export TEXT
       )
     ''');
 
@@ -57,6 +61,8 @@ class DBHelper {
         tanggal_kembali TEXT,
         foto_path TEXT,
         created_at TEXT,
+        jenis_laporan TEXT,
+        tanggal_export TEXT,
         bulan_laporan TEXT
       )
     ''');
@@ -74,7 +80,6 @@ class DBHelper {
           'ALTER TABLE peminjaman ADD COLUMN created_at TEXT');
     }
 
-    // 🔥 Tambah tabel laporan jika belum ada
     if (oldVersion < 3) {
       await db.execute('''
         CREATE TABLE IF NOT EXISTS laporan (
@@ -102,7 +107,6 @@ class DBHelper {
     final bulanSekarang =
         "${now.year}-${now.month.toString().padLeft(2, '0')}";
 
-    // Ambil data bulan lalu
     final dataLama = await db.query(
       'peminjaman',
       where: "strftime('%Y-%m', tanggal_pinjam) != ?",
@@ -128,7 +132,6 @@ class DBHelper {
       );
     }
 
-    // Hapus dari tabel utama
     await db.delete(
       'peminjaman',
       where: "strftime('%Y-%m', tanggal_pinjam) != ?",
@@ -153,14 +156,102 @@ class DBHelper {
     final db = await database;
 
     return await db.rawQuery('''
-      SELECT bulan_laporan AS bulan,
-      COUNT(*) AS total
-      FROM laporan
-      GROUP BY bulan_laporan
-      ORDER BY bulan_laporan DESC
+      SELECT bulan, total, jenis, sort_date FROM (
+        SELECT tanggal_export AS bulan, COUNT(*) AS total, 'manual' AS jenis, tanggal_export AS sort_date
+        FROM laporan
+        WHERE jenis_laporan = 'manual'
+        GROUP BY tanggal_export
+        UNION ALL
+        SELECT bulan_laporan AS bulan, COUNT(*) AS total, 'otomatis' AS jenis, (bulan_laporan || '-01') AS sort_date
+        FROM laporan
+        WHERE jenis_laporan = 'otomatis' OR jenis_laporan IS NULL
+        GROUP BY bulan_laporan
+      ) ORDER BY sort_date DESC
     ''');
   }
 
+    static Future<int> updatePeminjamanToLaporanManual(
+      int id, String tanggalExport) async {
+    final db = await database;
+    return await db.update(
+      'peminjaman',
+      {
+        'is_laporan': 1,
+        'jenis_laporan': 'manual',
+        'tanggal_export': tanggalExport,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+  
+  static Future<int> updatePeminjamanToLaporanOtomatis(
+    int id, String tanggalExport) async {
+  final db = await database;
+  return await db.update(
+    'peminjaman',
+    {
+      'is_laporan': 1,
+      'jenis_laporan': 'otomatis',
+      'tanggal_export': tanggalExport,
+    },
+    where: 'id = ?',
+    whereArgs: [id],
+  );
+}
+
+  static Future<void> exportManualMany(List<int> ids) async {
+    final db = await database;
+
+    final now = DateTime.now();
+    final tanggalExport = now.toIso8601String();
+
+    for (var id in ids) {
+      final dataList = await db.query(
+        'peminjaman',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+
+      if (dataList.isEmpty) continue;
+
+      final data = dataList.first;
+
+      final tanggal = DateTime.parse(data['tanggal_pinjam'] as String);
+      final bulanData =
+          "${tanggal.year}-${tanggal.month.toString().padLeft(2, '0')}";
+
+      await db.insert(
+        'laporan',
+        {
+          'id': data['id'],
+          'nama_barang': data['nama_barang'],
+          'nama_peminjam': data['nama_peminjam'],
+          'kelas': data['kelas'],
+          'instansi': data['instansi'],
+          'tanggal_pinjam': data['tanggal_pinjam'],
+          'tanggal_kembali': data['tanggal_kembali'],
+          'foto_path': data['foto_path'],
+          'created_at': data['created_at'],
+          'jenis_laporan': 'manual',
+          'tanggal_export': tanggalExport, 
+          'bulan_laporan': bulanData,
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+
+      await db.update(
+        'peminjaman',
+        {
+          'is_laporan': 1,
+          'jenis_laporan': 'manual',
+          'tanggal_export': tanggalExport,
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    }
+  }
   // ================= CRUD =================
 
   static Future<int> insertPeminjaman(
@@ -209,5 +300,34 @@ class DBHelper {
       whereArgs: [id],
     );
   }
+  // ================= EXPORT PDF =================
 
+  static Future<String?> exportPdfManual(String tanggalExport) async {
+    final db = await database;
+
+    final data = await db.query(
+      'laporan',
+      where: 'jenis_laporan = ? AND tanggal_export = ?',
+      whereArgs: ['manual', tanggalExport],
+    );
+
+    if (data.isEmpty) return null;
+
+    final path = await PdfHelper.generateLaporanPdf(
+      data,
+      title: "Laporan Manual",
+    );
+    return path;
+  }
+
+  static Future<String?> exportPdfBulanan(String bulan) async {
+    final data = await getPeminjamanByBulan(bulan);
+    if (data.isEmpty) return null;
+
+    final path = await PdfHelper.generateLaporanPdf(
+      data,
+      title: "Laporan Bulan $bulan",
+    );
+    return path;
+  }
 }

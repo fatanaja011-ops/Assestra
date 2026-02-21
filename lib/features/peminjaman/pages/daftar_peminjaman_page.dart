@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import '../../../core/database/db_helper.dart';
-import 'tambah_peminjaman_page.dart';
 import 'detail_peminjaman_page.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:open_file/open_file.dart';
+import 'dart:io';
+import 'package:permission_handler/permission_handler.dart';
+
 
 class DaftarPeminjamanPage extends StatefulWidget {
   final bool isExportMode;
   final Function(bool) onExportModeChanged;
+  final Function(Function())? onPageReady;
 
   const DaftarPeminjamanPage({
     super.key,
     required this.isExportMode,
     required this.onExportModeChanged,
+    this.onPageReady,
   });
 
   @override
@@ -30,6 +36,8 @@ class _DaftarPeminjamanPageState
   void initState() {
     super.initState();
     loadData();
+    // Pass loadData callback ke parent
+    widget.onPageReady?.call(loadData);
   }
 
   Future<void> loadData() async {
@@ -70,15 +78,23 @@ class _DaftarPeminjamanPageState
     );
 
     if (confirm == true) {
+
+      await DBHelper.exportManualMany(selectedItems.toList());
+
+
+      await loadData();
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Data berhasil di export ke PDF"),
+          content: Text("Data berhasil di-export ke Laporan Manual"),
           backgroundColor: Colors.green,
         ),
       );
+
       exitExportMode();
     }
   }
+
 
   Map<String, List<Map<String, dynamic>>> groupByTanggal() {
     Map<String, List<Map<String, dynamic>>> grouped = {};
@@ -104,6 +120,52 @@ class _DaftarPeminjamanPageState
     }).length;
   }
 
+  Future<void> generatePdf(List<Map<String, dynamic>> data) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.MultiPage(
+        build: (pw.Context context) => [
+          pw.Text("Laporan Peminjaman",
+              style: pw.TextStyle(fontSize: 20)),
+          pw.SizedBox(height: 20),
+          ...data.map((item) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text("Barang: ${item['nama_barang']}"),
+                pw.Text("Peminjam: ${item['nama_peminjam']}"),
+                pw.Text("Kelas: ${item['kelas']}"),
+                pw.Text("Tanggal Pinjam: ${item['tanggal_pinjam']}"),
+                pw.Text("Tanggal Kembali: ${item['tanggal_kembali']}"),
+                pw.Divider(),
+              ],
+            );
+          }).toList(),
+        ],
+      ),
+    );
+
+    // Request permission
+    await Permission.manageExternalStorage.request();
+
+    final directory =
+        Directory('/storage/emulated/0/Download/Assestra');
+
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
+    }
+
+    final file = File(
+        '${directory.path}/Laporan_${DateTime.now().millisecondsSinceEpoch}.pdf');
+
+    await file.writeAsBytes(await pdf.save());
+
+    // Buka PDF
+    await OpenFile.open(file.path);
+  }
+
+
   Widget buildItemCard(Map<String, dynamic> item) {
     final int id = item['id'];
 
@@ -116,8 +178,33 @@ class _DaftarPeminjamanPageState
         leading: const Icon(Icons.inventory_2,
             color: Color(0xFF4DB6AC)),
         title: Text(item['nama_barang']),
-        subtitle:
+       subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Text("Peminjam: ${item['nama_peminjam']}"),
+            const SizedBox(height: 4),
+            Builder(
+              builder: (_) {
+                try {
+                  final tglKembali =
+                      DateTime.parse(item['tanggal_kembali']);
+                  final formatted =
+                      DateFormat('dd-MM-yyyy').format(tglKembali);
+
+                  return Text(
+                    "Kembali: $formatted",
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.black54,
+                    ),
+                  );
+                } catch (_) {
+                  return const Text("Kembali: -");
+                }
+              },
+            ),
+          ],
+        ),
         onTap: () {
           if (widget.isExportMode) {
             setState(() {
@@ -152,149 +239,161 @@ class _DaftarPeminjamanPageState
 
   @override
   Widget build(BuildContext context) {
+
+    // 🔹 Loading
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    // 🔹 Kalau data kosong
+    if (dataPeminjaman.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/images/Empty-bro.png',
+              width: 180,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Belum Ada Data Peminjaman',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Silakan tambah data terlebih dahulu',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.black45,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final groupedData = groupByTanggal();
     final sortedDates = groupedData.keys.toList()
       ..sort((a, b) => b.compareTo(a));
 
     return Stack(
       children: [
-        isLoading
-            ? const Center(
-                child: CircularProgressIndicator())
-            : ListView(
-                padding:
-                    const EdgeInsets.fromLTRB(16, 16, 16, 100),
+
+        // ================= LIST DATA =================
+        ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          children: [
+
+            // 🔹 Card Atas (Bulan Ini & Export)
+            if (!widget.isExportMode)
+              Row(
                 children: [
-                  if (!widget.isExportMode)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Card(
-                            color: const Color(0xFFFF8F00),
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(16),
-                            ),
-                            child: SizedBox(
-                              height: 110,
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.center,
-                                  children: [
-                                    const Text(
-                                      "Bulan Ini",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      "${getTotalPeminjamanBulanIni()} Peminjaman",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight:
-                                            FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
+                  Expanded(
+                    child: Card(
+                      color: const Color(0xFFFF8F00),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: SizedBox(
+                        height: 110,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                "Bulan Ini",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
                                 ),
                               ),
-                            ),
+                              const SizedBox(height: 6),
+                              Text(
+                                "${getTotalPeminjamanBulanIni()} Peminjaman",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: InkWell(
-                            borderRadius:
-                                BorderRadius.circular(16),
-                            onTap: () {
-                              widget.onExportModeChanged(true);
-                            },
-                            child: Card(
-                              color:
-                                  const Color(0xFF1976D2),
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(16),
-                              ),
-                              child: const SizedBox(
-                                height: 110,
-                                child: Center(
-                                  child: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .center,
-                                    children: [
-                                      Icon(
-                                        Icons.download,
-                                        size: 28,
-                                        color:
-                                            Colors.white,
-                                      ),
-                                      SizedBox(height: 8),
-                                      Text(
-                                        "Export Manual",
-                                        style: TextStyle(
-                                          color:
-                                              Colors.white,
-                                          fontWeight:
-                                              FontWeight
-                                                  .bold,
-                                        ),
-                                      ),
-                                    ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () {
+                        widget.onExportModeChanged(true);
+                      },
+                      child: Card(
+                        color: const Color(0xFF1976D2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const SizedBox(
+                          height: 110,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.download,
+                                  size: 28,
+                                  color: Colors.white,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "Export Manual",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  const SizedBox(height: 16),
-                  ...sortedDates.map((tanggal) {
-                    final items =
-                        groupedData[tanggal]!;
-                    return Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        Text(tanggal,
-                            style: const TextStyle(
-                                fontWeight:
-                                    FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        ...items.map(buildItemCard),
-                      ],
-                    );
-                  }).toList(),
+                  ),
                 ],
               ),
 
-        if (!widget.isExportMode)
-          Positioned(
-            bottom: 20,
-            right: 20,
-            child: FloatingActionButton(
-              backgroundColor:
-                  const Color(0xFF4DB6AC),
-              child: const Icon(Icons.add,
-                  color: Colors.white),
-              onPressed: () async {
-                await showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  builder: (_) =>
-                      const TambahPeminjamanPage(),
-                );
-                loadData();
-              },
-            ),
-          ),
+            const SizedBox(height: 16),
 
+            // 🔹 Group berdasarkan tanggal
+            ...sortedDates.map((tanggal) {
+              final items = groupedData[tanggal]!;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tanggal,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...items.map(buildItemCard),
+                ],
+              );
+            }).toList(),
+          ],
+        ),
+
+        // ================= BOTTOM EXPORT BAR =================
         if (widget.isExportMode)
           Positioned(
             bottom: 0,
@@ -316,33 +415,24 @@ class _DaftarPeminjamanPageState
                 children: [
                   const Text(
                     "Pilih minimal 1 data",
-                    style: TextStyle(
-                        color: Colors.white70),
+                    style: TextStyle(color: Colors.white70),
                   ),
                   const SizedBox(height: 8),
                   Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment
-                            .spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       TextButton(
-                        onPressed:
-                            exitExportMode,
+                        onPressed: exitExportMode,
                         child: const Text(
                           "Cancel",
-                          style: TextStyle(
-                              color: Color(
-                                  0xFF4DB6AC)),
+                          style: TextStyle(color: Color(0xFF4DB6AC)),
                         ),
                       ),
                       TextButton(
-                        onPressed:
-                            confirmExport,
+                        onPressed: confirmExport,
                         child: const Text(
                           "Export",
-                          style: TextStyle(
-                              color: Color(
-                                  0xFF4DB6AC)),
+                          style: TextStyle(color: Color(0xFF4DB6AC)),
                         ),
                       ),
                     ],

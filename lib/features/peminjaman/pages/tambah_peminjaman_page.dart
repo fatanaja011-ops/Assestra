@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../scan/pages/scan_qr_page.dart';
 import '../../../core/database/db_helper.dart';
 import 'dart:io';
@@ -45,31 +46,15 @@ class _TambahPeminjamanPageState extends State<TambahPeminjamanPage> {
     },
 
     builder: (context, child) {
-      return MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          size: Size(
-            MediaQuery.of(context).size.width * 1.3,
-            MediaQuery.of(context).size.height,
+      return Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: Color(0xFF4DB6AC),
+            onPrimary: Colors.white,
+            onSurface: Colors.black,
           ),
         ),
-        child: Transform.scale(
-          scale: 1.21, 
-          child: Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: Color(0xFF4DB6AC),
-                onPrimary: Colors.white,
-                onSurface: Colors.black,
-              ),
-              dialogTheme: DialogThemeData(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
-                ),
-              ),
-            ),
-            child: child!,
-          ),
-        ),
+        child: child!,
       );
     },
   );
@@ -91,15 +76,26 @@ class _TambahPeminjamanPageState extends State<TambahPeminjamanPage> {
       imageQuality: 60,
     );
 
-    if (image != null) {
-      setState(() {
-        fotoBarang = File(image.path);
-      });
+    if (image == null) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('📸 Foto berhasil diambil')),
-      );
-    }
+    final directory =
+        await getApplicationDocumentsDirectory();
+
+    final String newPath =
+        '${directory.path}/bukti_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+    final File newImage =
+        await File(image.path).copy(newPath);
+
+    setState(() {
+      fotoBarang = newImage;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('📸 Foto berhasil disimpan permanen'),
+      ),
+    );
   }
 
   Future<void> simpanData() async {

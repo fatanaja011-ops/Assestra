@@ -1,10 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../peminjaman/pages/edit_peminjaman_page.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 class DetailPeminjamanPage extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -17,77 +13,6 @@ class DetailPeminjamanPage extends StatelessWidget {
   bool get bolehEdit {
     final createdAt = DateTime.parse(data['tanggal_pinjam']);
     return DateTime.now().difference(createdAt).inDays < 1;
-  }
-
-  // ================= EXPORT PDF FUNCTION =================
-  Future<void> exportPdf() async {
-    final pdf = pw.Document();
-
-    pdf.addPage(
-    pw.Page(
-      pageFormat: PdfPageFormat.a4,
-      margin: const pw.EdgeInsets.all(24),
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              'DATA PEMINJAMAN',
-              style: pw.TextStyle(
-                fontSize: 22,
-                fontWeight: pw.FontWeight.bold,
-              ),
-            ),
-            pw.SizedBox(height: 20),
-
-            pw.Text('Nama Peminjam : ${data['nama_peminjam']}'),
-            pw.Text('Kelas         : ${data['kelas']}'),
-            pw.Text('Instansi      : ${data['instansi'] ?? '-'}'),
-
-            pw.SizedBox(height: 10),
-
-            pw.Text('Nama Barang   : ${data['nama_barang']}'),
-
-            pw.SizedBox(height: 10),
-
-            pw.Text(
-                'Tanggal Pinjam  : ${data['tanggal_pinjam'].substring(0, 10)}'),
-            pw.Text(
-                'Tanggal Kembali: ${data['tanggal_kembali'].substring(0, 10)}'),
-
-            pw.SizedBox(height: 20),
-
-            if (data['foto_barang'] != null)
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text('Foto Barang :'),
-                  pw.SizedBox(height: 10),
-                  pw.Image(
-                    pw.MemoryImage(
-                      File(data['foto_barang']).readAsBytesSync(),
-                    ),
-                    width: 200,
-                  ),
-                ],
-              ),
-          ],
-        );
-      },
-    ),
-  );
-
-
-    // ===== SIMPAN FILE =====
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/peminjaman_${data['id']}.pdf');
-    await file.writeAsBytes(await pdf.save());
-
-    // ===== SHARE FILE =====
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      text: 'Data Peminjaman',
-    );
   }
 
   // ================= UI =================
@@ -153,18 +78,32 @@ class DetailPeminjamanPage extends StatelessWidget {
                     data['tanggal_kembali'].substring(0, 10)),
               ],
             ),
-            if (data['foto_barang'] != null)
+            if (data['foto_barang'] != null &&
+              data['foto_barang'].toString().isNotEmpty)
               _section(
-                'Foto Barang',
+                'Foto Bukti',
                 [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.file(
-                      File(data['foto_barang']),
-                      height: 200,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
+                  Builder(
+                    builder: (_) {
+                      final file = File(data['foto_barang']);
+
+                      if (!file.existsSync()) {
+                        return const Text(
+                          "File foto tidak ditemukan",
+                          style: TextStyle(color: Colors.red),
+                        );
+                      }
+
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(
+                          file,
+                          height: 220,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -178,25 +117,6 @@ class DetailPeminjamanPage extends StatelessWidget {
               ),
 
             const SizedBox(height: 20),
-
-            // ===== TOMBOL EXPORT PDF =====
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4DB6AC),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: () async {
-                  await exportPdf();
-                },
-                icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
-                label: const Text(
-                  'Export ke PDF',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-              ),
-            ),
           ],
         ),
       ),
