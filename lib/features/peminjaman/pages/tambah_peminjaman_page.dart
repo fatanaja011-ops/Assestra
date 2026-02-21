@@ -20,10 +20,10 @@ class _TambahPeminjamanPageState extends State<TambahPeminjamanPage> {
   final TextEditingController kelasController = TextEditingController();
   final TextEditingController instansiController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
-  void initState() {
-  super.initState();
-  tanggalPinjam = DateTime.now();
-}
+    void initState() {
+    super.initState();
+    tanggalPinjam = DateTime.now();
+  }
 
   File? fotoBarang;
   DateTime? tanggalPinjam;
@@ -46,29 +46,29 @@ class _TambahPeminjamanPageState extends State<TambahPeminjamanPage> {
     },
 
     builder: (context, child) {
-      return Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xFF4DB6AC),
-            onPrimary: Colors.white,
-            onSurface: Colors.black,
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF4DB6AC),
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
           ),
-        ),
-        child: child!,
-      );
-    },
-  );
+          child: child!,
+        );
+      },
+    );
 
-  if (picked != null) {
-    setState(() {
-      if (isPinjam) {
-        tanggalPinjam = picked;
-      } else {
-        tanggalKembali = picked;
-      }
-    });
+    if (picked != null) {
+      setState(() {
+        if (isPinjam) {
+          tanggalPinjam = picked;
+        } else {
+          tanggalKembali = picked;
+        }
+      });
+    }
   }
-}
 
   Future<void> ambilFoto() async {
     final XFile? image = await _picker.pickImage(
@@ -99,59 +99,59 @@ class _TambahPeminjamanPageState extends State<TambahPeminjamanPage> {
   }
 
   Future<void> simpanData() async {
-  await DBHelper.insertPeminjaman({
-    'nama_barang': namaBarangController.text,
-    'nama_peminjam': namaPeminjamController.text,
-    'kelas': kelasController.text,
-    'instansi': instansiController.text,
-    'tanggal_pinjam': tanggalPinjam!.toIso8601String(),
-    'tanggal_kembali': tanggalKembali!.toIso8601String(),
-    'foto_path': fotoBarang?.path,
-  });
+    await DBHelper.insertPeminjaman({
+      'nama_barang': namaBarangController.text,
+      'nama_peminjam': namaPeminjamController.text,
+      'kelas': kelasController.text,
+      'instansi': instansiController.text,
+      'tanggal_pinjam': tanggalPinjam!.toIso8601String(),
+      'tanggal_kembali': tanggalKembali!.toIso8601String(),
+      'foto_path': fotoBarang?.path,
+    });
 
-  Navigator.pop(context, true);
-}
-
-Future<void> showWarningFoto() async {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text("Peringatan"),
-        content: const Text(
-          "Apakah anda yakin tanpa ambil foto bukti?",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await ambilFoto();
-
-              if (fotoBarang != null) {
-                await simpanData();
-              }
-            },
-            child: const Text(
-              "Ambil Foto",
-              style: TextStyle(color: Color(0xFF4DB6AC)),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await simpanData();
-            },
-            child: const Text(
-              "Tidak perlu",
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
+    Navigator.pop(context, true);
   }
+
+  Future<void> showWarningFoto() async {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text("Peringatan"),
+          content: const Text(
+            "Apakah anda yakin tanpa ambil foto bukti?",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await ambilFoto();
+
+                if (fotoBarang != null) {
+                  await simpanData();
+                }
+              },
+              child: const Text(
+                "Ambil Foto",
+                style: TextStyle(color: Color(0xFF4DB6AC)),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await simpanData();
+              },
+              child: const Text(
+                "Tidak perlu",
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
 
   @override
