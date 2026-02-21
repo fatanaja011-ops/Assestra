@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../peminjaman/pages/daftar_peminjaman_page.dart';
-import 'cara_pakai_modal.dart';
 import '../../../laporan/pages/laporan_bulanan_page.dart';
 import '../../../core/database/db_helper.dart';
 import '../../peminjaman/pages/tambah_peminjaman_page.dart';
