@@ -40,8 +40,7 @@ class _TambahPeminjamanPageState extends State<TambahPeminjamanPage> {
     initialDate = today;
     firstDate = DateTime(today.year, today.month, today.day);
   } else {
-    // Untuk tanggal kembali, minimal adalah tanggal pinjam (jika sudah dipilih),
-    // atau hari ini jika tanggal pinjam belum dipilih.
+   
     initialDate = tanggalPinjam ?? today;
     final minDate = tanggalPinjam ?? today;
     firstDate = DateTime(minDate.year, minDate.month, minDate.day);
