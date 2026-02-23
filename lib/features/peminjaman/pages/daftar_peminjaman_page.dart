@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/database/db_helper.dart';
 import 'detail_peminjaman_page.dart';
+import '../../../laporan/pages/laporan_bulanan_page.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:open_file/open_file.dart';
@@ -36,7 +37,6 @@ class _DaftarPeminjamanPageState
   void initState() {
     super.initState();
     loadData();
-    // Pass loadData callback ke parent
     widget.onPageReady?.call(loadData);
   }
 
@@ -91,7 +91,15 @@ class _DaftarPeminjamanPageState
         ),
       );
 
+      // Keluar dari mode export dan buka halaman Laporan
       exitExportMode();
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const LaporanBulananPage(),
+        ),
+      );
     }
   }
 

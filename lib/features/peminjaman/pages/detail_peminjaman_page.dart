@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../peminjaman/pages/edit_peminjaman_page.dart';
 
 class DetailPeminjamanPage extends StatelessWidget {
@@ -72,20 +73,17 @@ class DetailPeminjamanPage extends StatelessWidget {
             _section(
               'Waktu',
               [
-                _item('Tanggal Pinjam',
-                    data['tanggal_pinjam'].substring(0, 10)),
-                _item('Tanggal Kembali',
-                    data['tanggal_kembali'].substring(0, 10)),
+                _item('Tanggal Pinjam', _formatDate(data['tanggal_pinjam'])),
+                _item('Tanggal Kembali', _formatDate(data['tanggal_kembali'])),
               ],
             ),
-            if (data['foto_barang'] != null &&
-              data['foto_barang'].toString().isNotEmpty)
+            if (data['foto_path'] != null && data['foto_path'].toString().isNotEmpty)
               _section(
                 'Foto Bukti',
                 [
                   Builder(
                     builder: (_) {
-                      final file = File(data['foto_barang']);
+                      final file = File(data['foto_path']);
 
                       if (!file.existsSync()) {
                         return const Text(
@@ -158,5 +156,20 @@ class DetailPeminjamanPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatDate(String? iso) {
+    if (iso == null || iso.isEmpty) return '-';
+    try {
+      final dt = DateTime.parse(iso);
+      return DateFormat('dd-MM-yyyy').format(dt);
+    } catch (_) {
+      // fallback: try to substring date part
+      try {
+        return iso.substring(0, 10);
+      } catch (_) {
+        return iso;
+      }
+    }
   }
 }

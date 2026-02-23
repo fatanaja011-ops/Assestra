@@ -175,26 +175,31 @@ class _HomePageState extends State<HomePage> {
             backgroundColor: const Color(0xFF4DB6AC),
             child: const Icon(Icons.add, color: Colors.white),
             onPressed: () async {
-                await showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) {
-                  return FractionallySizedBox(
-                    heightFactor: 0.85,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF1F8F4),
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(24),
+                  final result = await showModalBottomSheet<bool>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) {
+                    return FractionallySizedBox(
+                      heightFactor: 0.85,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF1F8F4),
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(24),
+                          ),
                         ),
+                        child: const TambahPeminjamanPage(),
                       ),
-                      child: const TambahPeminjamanPage(),
-                    ),
-                  );
-                },
-              );
-            }
+                    );
+                  },
+                );
+
+                // Jika halaman tambah mengembalikan true, reload daftar peminjaman
+                if (result == true) {
+                  reloadDaftarPeminjaman.call();
+                }
+              }
           )
         : null,
     );

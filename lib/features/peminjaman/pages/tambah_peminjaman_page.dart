@@ -32,19 +32,30 @@ class _TambahPeminjamanPageState extends State<TambahPeminjamanPage> {
   Future<void> pilihTanggal(bool isPinjam) async {
   final today = DateTime.now();
 
+  // Tentukan initialDate dan firstDate berdasarkan apakah memilih tanggal pinjam atau kembali
+  DateTime initialDate = today;
+  DateTime firstDate = DateTime(2020);
+
+  if (isPinjam) {
+    initialDate = today;
+    firstDate = DateTime(today.year, today.month, today.day);
+  } else {
+    // Untuk tanggal kembali, minimal adalah tanggal pinjam (jika sudah dipilih),
+    // atau hari ini jika tanggal pinjam belum dipilih.
+    initialDate = tanggalPinjam ?? today;
+    final minDate = tanggalPinjam ?? today;
+    firstDate = DateTime(minDate.year, minDate.month, minDate.day);
+  }
+
   final picked = await showDatePicker(
     context: context,
-    initialDate: today,
-    firstDate: DateTime(2020),
+    initialDate: initialDate,
+    firstDate: firstDate,
     lastDate: DateTime(2030),
-
     selectableDayPredicate: (day) {
-      final dateOnlyToday =
-          DateTime(today.year, today.month, today.day);
-
-      return !day.isBefore(dateOnlyToday);
+      final min = DateTime(firstDate.year, firstDate.month, firstDate.day);
+      return !day.isBefore(min);
     },
-
     builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -63,6 +74,16 @@ class _TambahPeminjamanPageState extends State<TambahPeminjamanPage> {
       setState(() {
         if (isPinjam) {
           tanggalPinjam = picked;
+
+          // Jika tanggal kembali sudah diisi tapi sekarang lebih awal dari pinjam, reset tanggal kembali
+          if (tanggalKembali != null && tanggalKembali!.isBefore(tanggalPinjam!)) {
+            tanggalKembali = null;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Tanggal kembali direset karena lebih awal dari tanggal pinjam. Silakan pilih kembali.'),
+              ),
+            );
+          }
         } else {
           tanggalKembali = picked;
         }
@@ -328,6 +349,17 @@ class _TambahPeminjamanPageState extends State<TambahPeminjamanPage> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Tanggal pinjam & kembali wajib diisi'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      // Validasi: tanggal kembali tidak boleh lebih awal dari tanggal pinjam
+                      if (tanggalKembali!.isBefore(tanggalPinjam!)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Tanggal kembali tidak boleh lebih awal dari tanggal pinjam'),
+                            backgroundColor: Colors.red,
                           ),
                         );
                         return;
