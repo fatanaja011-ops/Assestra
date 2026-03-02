@@ -248,14 +248,12 @@ class _DaftarPeminjamanPageState
   @override
   Widget build(BuildContext context) {
 
-    // 🔹 Loading
     if (isLoading) {
       return const Center(
         child: CircularProgressIndicator(),
       );
     }
 
-    // 🔹 Kalau data kosong
     if (dataPeminjaman.isEmpty) {
       return Center(
         child: Column(
@@ -299,7 +297,6 @@ class _DaftarPeminjamanPageState
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
           children: [
 
-            // 🔹 Card Atas (Bulan Ini & Export)
             if (!widget.isExportMode)
               Row(
                 children: [
@@ -380,7 +377,6 @@ class _DaftarPeminjamanPageState
 
             const SizedBox(height: 16),
 
-            // 🔹 Group berdasarkan tanggal
             ...sortedDates.map((tanggal) {
               final items = groupedData[tanggal]!;
 

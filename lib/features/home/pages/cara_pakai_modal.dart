@@ -53,7 +53,6 @@ class _CaraPakaiModalState extends State<CaraPakaiModal> {
         children: [
           const SizedBox(height: 12),
 
-          // Drag Indicator
           Container(
             width: 40,
             height: 4,
@@ -112,7 +111,6 @@ class _CaraPakaiModalState extends State<CaraPakaiModal> {
             ),
           ),
 
-          // DOT INDICATOR
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(

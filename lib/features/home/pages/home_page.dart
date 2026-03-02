@@ -195,7 +195,6 @@ class _HomePageState extends State<HomePage> {
                   },
                 );
 
-                // Jika halaman tambah mengembalikan true, reload daftar peminjaman
                 if (result == true) {
                   reloadDaftarPeminjaman.call();
                 }

@@ -6,7 +6,7 @@ class DBHelper {
   static Database? _database;
 
   static const String _dbName = 'assestra.db';
-  static const int _dbVersion = 3; // 🔥 naikkan versi
+  static const int _dbVersion = 3;
 
   // ================= DATABASE =================
 
@@ -49,7 +49,6 @@ class DBHelper {
       )
     ''');
 
-    // 🔹 Tabel laporan (ARSIP)
     await db.execute('''
       CREATE TABLE laporan (
         id INTEGER,

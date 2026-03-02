@@ -104,7 +104,6 @@ class LaporanBulananPage extends StatelessWidget {
       }
     }
 
-    // otomatis: `value` contains yyyy-MM
     if (value.isEmpty) return const Text('Laporan');
     return Text(
       'Laporan Bulan ${formatBulan(value)}',

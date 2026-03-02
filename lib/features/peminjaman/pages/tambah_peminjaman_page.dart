@@ -32,7 +32,6 @@ class _TambahPeminjamanPageState extends State<TambahPeminjamanPage> {
   Future<void> pilihTanggal(bool isPinjam) async {
   final today = DateTime.now();
 
-  // Tentukan initialDate dan firstDate berdasarkan apakah memilih tanggal pinjam atau kembali
   DateTime initialDate = today;
   DateTime firstDate = DateTime(2020);
 
@@ -74,7 +73,6 @@ class _TambahPeminjamanPageState extends State<TambahPeminjamanPage> {
         if (isPinjam) {
           tanggalPinjam = picked;
 
-          // Jika tanggal kembali sudah diisi tapi sekarang lebih awal dari pinjam, reset tanggal kembali
           if (tanggalKembali != null && tanggalKembali!.isBefore(tanggalPinjam!)) {
             tanggalKembali = null;
             ScaffoldMessenger.of(context).showSnackBar(
@@ -352,8 +350,7 @@ class _TambahPeminjamanPageState extends State<TambahPeminjamanPage> {
                         );
                         return;
                       }
-
-                      // Validasi: tanggal kembali tidak boleh lebih awal dari tanggal pinjam
+                      
                       if (tanggalKembali!.isBefore(tanggalPinjam!)) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(

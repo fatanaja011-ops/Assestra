@@ -164,7 +164,6 @@ class DetailPeminjamanPage extends StatelessWidget {
       final dt = DateTime.parse(iso);
       return DateFormat('dd-MM-yyyy').format(dt);
     } catch (_) {
-      // fallback: try to substring date part
       try {
         return iso.substring(0, 10);
       } catch (_) {
